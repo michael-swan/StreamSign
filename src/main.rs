@@ -56,8 +56,8 @@ async fn check(signature_actor: web::Data<Addr<SigActor>>, mut body: web::Payloa
             signature.append(&mut Vec::from(&buf[0..max_read]));
             buf = &buf[max_read..];
         }
-        if time.len() < 32 {
-            let max_read = min(32 - time.len(), buf.len());
+        if time.len() < 24 {
+            let max_read = min(24 - time.len(), buf.len());
             time.append(&mut Vec::from(&buf[0..max_read]));
             buf = &buf[max_read..];
         }
@@ -69,14 +69,11 @@ async fn check(signature_actor: web::Data<Addr<SigActor>>, mut body: web::Payloa
         return HttpResponse::Ok().body("Signature too short.");
     }
     let signature = hex::decode(signature).unwrap();
-    if time.len() != 32 {
+    if time.len() != 24 {
         return HttpResponse::Ok().body("Time too short.");
     }
-    let time = hex::decode(time).unwrap().as_slice();
-    // let secs: u64 = unsafe { transmute(&time[0..8]).to_be() };
-    // let nsecs: u64 = unsafe { transmute(&time[8..16]).to_be() };
-
-    // let nsecs = hex::decode(time[16..32]).unwrap();
+    let time = hex::decode(time).unwrap();
+    body_ctxt.update(time.as_slice());
     let msg = CheckSignatureMsg {
         signature,
         data: Vec::from(body_ctxt.finish().as_ref())
